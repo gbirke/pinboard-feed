@@ -1,0 +1,17 @@
+{
+    "name": "birke/pinboard_feed",
+    "description": "Cleanup for Pinboard.in RSS feeds",
+    "authors": [
+        {
+            "name": "Gabriel Birke",
+            "email": "gb@birke-software.de"
+        }
+    ],
+    "autoload": {
+        "psr-0": {"Birke\\PinboardFeed": "src/"}
+    },
+    "require": {
+        "kriswallsmith/buzz": "v0.10",
+        "doctrine/cache": "v1.0"
+    }
+}
