@@ -11,7 +11,7 @@ namespace Birke\PinboardFeed;
 
 use Buzz\Browser;
 use Doctrine\Common\Cache\CacheProvider;
-
+use Psr\Log\LoggerInterface;
 
 
 class PinboardClient {
@@ -34,6 +34,11 @@ class PinboardClient {
 
     protected $lastRequest = 0;
 
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
+
     function __construct($cache, $browser)
     {
         $this->cache = $cache;
@@ -41,10 +46,13 @@ class PinboardClient {
     }
 
     public function has($link) {
+        $logger = $this->getLogger();
         if($this->cache->contains($link)) {
+            $logger->debug("$link found in cache.");
             return $this->cache->fetch($link);
         }
         else {
+            $logger->debug("$link not found in cache, fetching ...");
             if(time() - $this->lastRequest < self::WAIT) {
                 sleep(self::WAIT);
             }
@@ -89,6 +97,22 @@ class PinboardClient {
     public function getAuthToken()
     {
         return $this->authToken;
+    }
+
+    /**
+     * @param \Psr\Log\LoggerInterface $logger
+     */
+    public function setLogger($logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
     }
 
 }

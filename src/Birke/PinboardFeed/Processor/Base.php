@@ -10,10 +10,17 @@
 namespace Birke\PinboardFeed\Processor;
 
 
+use Psr\Log\LoggerInterface;
+
 abstract class Base {
 
     const NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     const NS_RSS = "http://purl.org/rss/1.0/";
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * Add/Remove items from DOMDocument
@@ -50,12 +57,31 @@ abstract class Base {
     protected function collectLinks(\DOMDocument $dom, $callback) {
         $links = array();
         $xpath = $this->getXpath($dom);
-        foreach($xpath->query("/rdf:RDF/rss:item") as $item) {
+        $linkElements = $xpath->query("/rdf:RDF/rss:item");
+        if($linkElements->length < 1) {
+            $this->getLogger()->warning("No links in document");
+            return $links;
+        }
+        foreach($linkElements as $item) {
             $link = $item->attributes->getNamedItemNS(self::NS_RDF, "about")->value;
             $callback($this, $links, $link);
         }
         return $links;
     }
 
+    /**
+     * @param \Psr\Log\LoggerInterface $logger
+     */
+    public function setLogger($logger)
+    {
+        $this->logger = $logger;
+    }
 
+    /**
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
+    }
 }

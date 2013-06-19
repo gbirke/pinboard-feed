@@ -6,6 +6,10 @@ use Birke\PinboardFeed\Processor\DuplicateRemover;
 
 $url = "http://feeds.pinboard.in/rss/t:javascript";
 $cache = new \Doctrine\Common\Cache\ApcCache();
+$logger = new \Analog\Logger();
+$logger->handler(function($info){
+    error_log(sprintf("%s [%d] (%s) - %s", $info['date'], $info['level'], $info['machine'], $info['message']));
+});
 
 $browser = new \Buzz\Browser();
 
@@ -20,6 +24,7 @@ $dom = new \DOMDocument();
 $dom->load($doc);
 
 $client = new \Birke\PinboardFeed\PinboardClient($cache, $browser);
+$client->setLogger($logger);
 
 if(!($authToken = getEnv("PINBOARD_AUTH_TOKEN"))) {
     die("Environment variable PINBOARD_AUTH_TOKEN not found.");
@@ -27,7 +32,10 @@ if(!($authToken = getEnv("PINBOARD_AUTH_TOKEN"))) {
 $client->setAuthToken($authToken);
 
 $duplicates = new DuplicateRemover();
+$duplicates->setLogger($logger);
 $bookmarked = new \Birke\PinboardFeed\Processor\BookmarkedRemover($client);
+$bookmarked->setLogger($logger);
+
 $dom = $duplicates->process($dom);
 $dom = $bookmarked->process($dom);
 header("Content-type: application/rss+xml");
