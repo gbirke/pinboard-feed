@@ -9,6 +9,8 @@
 
 namespace Birke\PinboardFeed\Processor;
 
+use Birke\PinboardFeed\PinboardClient;
+
 /**
  * Remove items the user has already bookmarked
  *
@@ -16,6 +18,9 @@ namespace Birke\PinboardFeed\Processor;
  */
 class BookmarkedRemover extends Base{
 
+    /**
+     * @var PinboardClient
+     */
     protected $pinboardClient;
 
     function __construct($pinboardClient)
@@ -32,12 +37,15 @@ class BookmarkedRemover extends Base{
      */
     public function process(\DOMDocument $dom)
     {
-        $client = $this->pinboardClient;
-        $links = $this->collectLinks($dom, function($processor, &$links, $link) use($client) {
-            $links[$link] = $client->has($link) ? 2 : 1;
+        $links = $this->collectLinks($dom, function($processor, &$links, $link) {
+            $links[] = $link;
         });
+        $linkList = array();
+        foreach($this->pinboardClient->checkLinks($links) as $link => $hasLink) {
+            $linkList[$link] = $hasLink ? 2 : 1;
+        }
 
-        $this->removeLinks($dom, $links, 0);
+        $this->removeLinks($dom, $linkList, 0);
         return $dom;
     }
 

@@ -10,6 +10,7 @@
 namespace Birke\PinboardFeed;
 
 use Buzz\Browser;
+use Buzz\Message\Response;
 use Doctrine\Common\Cache\CacheProvider;
 use Psr\Log\LoggerInterface;
 
@@ -34,6 +35,10 @@ class PinboardClient {
 
     protected $lastRequest = 0;
 
+    protected $cachePrefix = "";
+
+    protected $httpErrorCount = 0;
+
     /**
      * @var LoggerInterface
      */
@@ -47,24 +52,54 @@ class PinboardClient {
 
     public function has($link) {
         $logger = $this->getLogger();
-        if($this->cache->contains($link)) {
+        $cacheId = $this->cachePrefix.'.'.$link;
+        if($this->cache->contains($cacheId)) {
             $logger->debug("$link found in cache.");
             return $this->cache->fetch($link);
         }
         else {
             $logger->debug("$link not found in cache, fetching ...");
-            if(time() - $this->lastRequest < self::WAIT) {
+            $now = time();
+            if($now - $this->lastRequest < self::WAIT) {
                 sleep(self::WAIT);
             }
+            $this->lastRequest = $now;
             $url = "https://".$this->apiUrl."auth_token={$this->authToken}&url=".urlencode($link);
+            /** @var Response $response */
             $response = $this->browser->get($url);
+            if(!$response->isSuccessful()) {
+                $logger->error("Getting Link status at $url was not successful. (".$response->getStatusCode()
+                    ." ".$response->getReasonPhrase()).")";
+                $this->httpErrorCount++;
+                return false;
+            }
             $dom = new \DOMDocument();
-            $dom->loadXML($response->getContent());
+            if(!$dom->loadXML($response->getContent())) {
+                $logger->error("Parsing pinboard XML response was not succesful:\n".$response->getContent());
+                return false;
+            }
             $posts = $dom->getElementsByTagName("post");
             $hasBookmarkedLink = $posts->length > 0;
-            $this->cache->save($link, $hasBookmarkedLink);
+            $this->cache->save($cacheId, $hasBookmarkedLink, 3600);
             return $hasBookmarkedLink;
         }
+    }
+
+    /**
+     * @param array $links All the links
+     * @return array
+     */
+    public function checkLinks($links){
+        $linkststats = array();
+        $this->httpErrorCount = 0;
+        $maxErrors = count($links) / 10;
+        foreach($links as $link) {
+            $linkststats[$link] = $this->has($link);
+            if($this->httpErrorCount > $maxErrors) {
+                throw new \RuntimeException("Too many HTTP errors when fetching from pinboard.in");
+            }
+        }
+        return $linkststats;
     }
 
     /**
@@ -89,6 +124,7 @@ class PinboardClient {
     public function setAuthToken($authToken)
     {
         $this->authToken = $authToken;
+        $this->cachePrefix = substr($authToken, 0, strpos($authToken, ":"));
     }
 
     /**

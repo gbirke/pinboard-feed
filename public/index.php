@@ -38,7 +38,7 @@ $client->setLogger($logger);
 if(empty($credentials['CONFIG']['CONFIG_VARS']['PINBOARD_AUTH_TOKEN'])) {
     die("PINBOARD_AUTH_TOKEN not configured.");
 }
-$client->setAuthToken($authToken);
+$client->setAuthToken($credentials['CONFIG']['CONFIG_VARS']['PINBOARD_AUTH_TOKEN']);
 
 $duplicates = new DuplicateRemover();
 $duplicates->setLogger($logger);
