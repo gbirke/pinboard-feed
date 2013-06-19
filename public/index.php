@@ -4,8 +4,6 @@ require_once __DIR__."/../vendor/autoload.php";
 
 use Birke\PinboardFeed\Processor\DuplicateRemover;
 
-header("Content-type: application/rss+xml");
-
 $url = "http://feeds.pinboard.in/rss/t:javascript";
 $cache = new \Doctrine\Common\Cache\ApcCache();
 
@@ -32,4 +30,5 @@ $duplicates = new DuplicateRemover();
 $bookmarked = new \Birke\PinboardFeed\Processor\BookmarkedRemover($client);
 $dom = $duplicates->process($dom);
 $dom = $bookmarked->process($dom);
+header("Content-type: application/rss+xml");
 echo $dom->saveXML();
