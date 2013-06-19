@@ -26,7 +26,7 @@ $dom->load($doc);
 $client = new \Birke\PinboardFeed\PinboardClient($cache, $browser);
 $client->setLogger($logger);
 
-if(!($authToken = getEnv("PINBOARD_AUTH_TOKEN"))) {
+if(!($authToken = getenv("PINBOARD_AUTH_TOKEN"))) {
     die("Environment variable PINBOARD_AUTH_TOKEN not found.");
 }
 $client->setAuthToken($authToken);
