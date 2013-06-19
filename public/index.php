@@ -17,6 +17,7 @@ $logger->handler(function($info){
 });
 
 $browser = new \Buzz\Browser();
+$browser->setClient(new \Buzz\Client\Curl());
 
 if(!($doc = $cache->fetch("feed_$url"))) {
     /** @var \Buzz\Message\Response $response */
