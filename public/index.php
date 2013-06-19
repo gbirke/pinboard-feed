@@ -19,14 +19,18 @@ $logger->handler(function($info){
 $browser = new \Buzz\Browser();
 
 if(!($doc = $cache->fetch("feed_$url"))) {
-
+    /** @var \Buzz\Message\Response $response */
     $response = $browser->get($url);
-    // TODO check for errors
+    if(!$response->isSuccessful()) {
+        throw new RuntimeException("Error when fetching $url");
+    }
     $doc = $response->getContent();
     $cache->save("feed_$url", $doc);
 }
 $dom = new \DOMDocument();
-$dom->load($doc);
+if(!$dom->loadXML($doc)) {
+    throw new \RuntimeException("Error parsing the following XML:\n$doc");
+}
 
 $client = new \Birke\PinboardFeed\PinboardClient($cache, $browser);
 $client->setLogger($logger);
