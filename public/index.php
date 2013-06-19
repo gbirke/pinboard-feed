@@ -4,6 +4,11 @@ require_once __DIR__."/../vendor/autoload.php";
 
 use Birke\PinboardFeed\Processor\DuplicateRemover;
 
+if(!($credFile = getenv("CRED_FILE"))) {
+    die("CRED_FILE environment variable not set!");
+}
+$credentials = new \Birke\PinboardFeed\Credentials($credFile);
+
 $url = "http://feeds.pinboard.in/rss/t:javascript";
 $cache = new \Doctrine\Common\Cache\ApcCache();
 $logger = new \Analog\Logger();
@@ -26,8 +31,8 @@ $dom->load($doc);
 $client = new \Birke\PinboardFeed\PinboardClient($cache, $browser);
 $client->setLogger($logger);
 
-if(!($authToken = getenv("PINBOARD_AUTH_TOKEN"))) {
-    die("Environment variable PINBOARD_AUTH_TOKEN not found.");
+if(empty($credentials['CONFIG']['CONFIG_VARS']['PINBOARD_AUTH_TOKEN'])) {
+    die("PINBOARD_AUTH_TOKEN not configured.");
 }
 $client->setAuthToken($authToken);
 
